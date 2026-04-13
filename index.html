@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>uh.moddinghub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f0f; color: #f0f0f0; min-height: 100vh; display: flex; flex-direction: column; }
+
+    .screen { display: none; flex: 1; align-items: center; justify-content: center; padding: 2rem 1rem; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    .card { background: #1a1a1a; border: 1px solid #2e2e2e; border-radius: 12px; padding: 2rem; width: 100%; max-width: 420px; margin: auto; }
+    .brand { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: #888; text-transform: uppercase; margin-bottom: 1.5rem; }
+    .brand span { color: #fff; }
+    h2 { font-size: 20px; font-weight: 600; margin-bottom: 0.4rem; color: #f0f0f0; }
+    p.sub { font-size: 14px; color: #888; margin-bottom: 1.5rem; }
+    .key-input { width: 100%; padding: 10px 14px; background: #111; border: 1px solid #2e2e2e; border-radius: 8px; color: #f0f0f0; font-size: 14px; margin-bottom: 1rem; outline: none; transition: border-color 0.15s; }
+    .key-input:focus { border-color: #555; }
+    .submit-btn { width: 100%; padding: 10px; background: #f0f0f0; color: #0f0f0f; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .submit-btn:hover { opacity: 0.85; }
+    .error-msg { font-size: 13px; color: #e05c5c; margin-bottom: 1rem; display: none; padding: 10px 14px; background: #2a1a1a; border: 1px solid #4a2a2a; border-radius: 8px; }
+
+    /* Dashboard */
+    .dashboard { flex-direction: column; align-items: stretch; padding: 0; }
+    .topbar { background: #141414; border-bottom: 1px solid #2e2e2e; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 52px; flex-shrink: 0; }
+    .topbar-brand { font-size: 15px; font-weight: 600; color: #f0f0f0; }
+    .topbar-brand span { color: #888; font-weight: 400; }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+    .discord-topbar-btn { display: flex; align-items: center; gap: 6px; background: #5865F2; color: #fff; border: none; border-radius: 8px; padding: 5px 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .discord-topbar-btn:hover { opacity: 0.85; }
+    .discord-topbar-btn svg { width: 16px; height: 16px; fill: white; flex-shrink: 0; }
+
+    .user-pill { display: none; align-items: center; gap: 8px; background: #1a1a1a; border: 1px solid #2e2e2e; border-radius: 99px; padding: 4px 10px 4px 4px; }
+    .user-pill.visible { display: flex; }
+    .user-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+    .user-avatar-placeholder { width: 26px; height: 26px; border-radius: 50%; background: #5865F2; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0; }
+    .user-name { font-size: 13px; color: #f0f0f0; font-weight: 500; }
+    .discord-logout-btn { background: none; border: none; color: #555; cursor: pointer; font-size: 14px; padding: 0 2px; transition: color 0.15s; line-height: 1; }
+    .discord-logout-btn:hover { color: #e05c5c; }
+
+    .admin-badge { font-size: 12px; background: #2a1f3a; color: #a87de8; border: 1px solid #4a3a6a; padding: 3px 10px; border-radius: 99px; cursor: pointer; white-space: nowrap; }
+
+    .tabs { display: flex; border-bottom: 1px solid #2e2e2e; padding: 0 1.5rem; background: #141414; flex-shrink: 0; }
+    .tab { padding: 12px 20px; font-size: 14px; color: #888; cursor: pointer; border-bottom: 2px solid transparent; background: none; border-left: none; border-right: none; border-top: none; transition: color 0.15s; }
+    .tab.active { color: #f0f0f0; border-bottom: 2px solid #5865F2; font-weight: 500; }
+    .tab:hover:not(.active) { color: #ccc; }
+
+    .tab-body { padding: 1.5rem; max-width: 700px; margin: 0 auto; width: 100%; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .welcome { font-size: 22px; font-weight: 600; margin-bottom: 0.4rem; }
+    .welcome-sub { font-size: 14px; color: #888; margin-bottom: 1.5rem; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+    .stat { background: #1a1a1a; border: 1px solid #2e2e2e; border-radius: 10px; padding: 14px 16px; }
+    .stat-label { font-size: 12px; color: #666; margin-bottom: 4px; }
+    .stat-value { font-size: 20px; font-weight: 600; color: #f0f0f0; }
+    .stat-value.green { color: #5cb85c; font-size: 15px; }
+    .stat-value.purple { color: #a87de8; font-size: 15px; }
+
+    .mods-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .mods-title { font-size: 16px; font-weight: 500; }
+    .add-btn { padding: 7px 14px; background: #f0f0f0; color: #0f0f0f; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .add-btn:hover { opacity: 0.85; }
+
+    .add-form { background: #1a1a1a; border: 1px solid #2e2e2e; border-radius: 10px; padding: 14px; margin-bottom: 1rem; display: none; }
+    .add-form.open { display: block; }
+    .add-form input { width: 100%; padding: 10px 14px; background: #111; border: 1px solid #2e2e2e; border-radius: 8px; color: #f0f0f0; font-size: 14px; margin-bottom: 8px; outline: none; }
+    .form-row { display: flex; gap: 8px; }
+    .form-row button { flex: 1; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-confirm { background: #f0f0f0; color: #0f0f0f; }
+    .btn-cancel { background: #2e2e2e; color: #f0f0f0; }
+
+    .mod-card { background: #1a1a1a; border: 1px solid #2e2e2e; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .mod-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+    .mod-name { font-size: 14px; font-weight: 500; color: #f0f0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mod-meta { font-size: 12px; color: #666; }
+    .mod-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .mod-tag { font-size: 12px; padding: 3px 10px; border-radius: 99px; background: #1a2e1a; color: #5cb85c; border: 1px solid #2e4a2e; }
+    .del-btn { background: none; border: none; color: #555; font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color 0.15s; line-height: 1; }
+    .del-btn:hover { color: #e05c5c; }
+
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: #555; font-size: 14px; border: 1px dashed #2e2e2e; border-radius: 10px; }
+    .readonly-notice { font-size: 13px; color: #666; padding: 10px 14px; background: #1a1a1a; border: 1px solid #2e2e2e; border-radius: 8px; margin-bottom: 1rem; }
+
+    .admin-login-overlay { display: none; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; border-radius: 12px; margin-bottom: 1rem; padding: 2rem; }
+    .admin-login-overlay.open { display: flex; }
+    .admin-login-overlay input { width: 100%; padding: 10px 14px; background: #111; border: 1px solid #2e2e2e; border-radius: 8px; color: #f0f0f0; font-size: 14px; margin-bottom: 8px; outline: none; }
+    .admin-error { font-size: 13px; color: #e05c5c; display: none; margin-bottom: 0.8rem; }
+
+    .auth-overlay { display: none; position: fixed; inset: 0; background: rgba(15,15,15,0.9); z-index: 999; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; }
+    .auth-overlay.active { display: flex; }
+    .spinner { width: 32px; height: 32px; border: 2.5px solid #2e2e2e; border-top-color: #5865F2; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer { text-align: center; padding: 1rem; font-size: 12px; color: #444; border-top: 1px solid #1e1e1e; margin-top: auto; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+  <!-- Discord auth loading overlay -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="spinner"></div>
+    <p style="font-size:14px;color:#888;">Connecting Discord...</p>
+  </div>
+
+  <!-- KEY SCREEN -->
+  <div id="key-screen" class="screen active">
+    <div class="card">
+      <div class="brand">uh.<span>moddinghub</span></div>
+      <h2>Access required</h2>
+      <p class="sub">Enter your key to continue.</p>
+      <input class="key-input" type="text" id="key-input" placeholder="Enter your key..." />
+      <div class="error-msg" id="key-error">Invalid key. Please try again.</div>
+      <button class="submit-btn" onclick="submitKey()">Submit key</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard-screen" class="screen dashboard">
+    <div class="topbar">
+      <div class="topbar-brand">uh.<span>moddinghub</span></div>
+      <div class="topbar-right">
+        <button class="discord-topbar-btn" id="discord-login-btn" onclick="loginWithDiscord()">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.056a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+          </svg>
+          Login
+        </button>
+        <div class="user-pill" id="user-pill">
+          <div class="user-avatar-placeholder" id="user-avatar-wrap">?</div>
+          <span class="user-name" id="topbar-username">User</span>
+          <button class="discord-logout-btn" onclick="discordLogout()" title="Disconnect">✕</button>
+        </div>
+        <div class="admin-badge" id="admin-btn" onclick="toggleAdminLogin()">Admin</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('home', this)">Home</button>
+      <button class="tab" onclick="switchTab('mods', this)">Mods</button>
+    </div>
+
+    <div class="tab-body">
+
+      <div id="tab-home" class="tab-content active">
+        <div class="welcome" id="welcome-msg">Welcome back.</div>
+        <div class="welcome-sub">sky re's system</div>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-label">Status</div><div class="stat-value green">Active</div></div>
+          <div class="stat"><div class="stat-label">Access level</div><div class="stat-value purple" id="access-level">Viewer</div></div>
+          <div class="stat"><div class="stat-label">Mods added</div><div class="stat-value" id="mod-count">0</div></div>
+          <div class="stat"><div class="stat-label">Version</div><div class="stat-value" style="font-size:15px;">1.0.0</div></div>
+        </div>
+        <div class="stat" id="discord-stat" style="display:none;">
+          <div class="stat-label">Discord account</div>
+          <div class="stat-value" style="color:#5865F2;font-size:15px;margin-top:4px;" id="discord-tag">—</div>
+        </div>
+      </div>
+
+      <div id="tab-mods" class="tab-content">
+        <div class="mods-header">
+          <span class="mods-title">APK mods</span>
+          <button class="add-btn" id="add-mod-btn" onclick="toggleForm()" style="display:none;">+ Add mod</button>
+        </div>
+
+        <div class="admin-login-overlay" id="admin-overlay">
+          <div class="card" style="max-width:320px;width:100%;">
+            <h2 style="font-size:16px;margin-bottom:0.4rem;">Admin login</h2>
+            <p class="sub" style="margin-bottom:1rem;">Enter your admin password.</p>
+            <input type="password" id="admin-pass-input" placeholder="Admin password..." />
+            <div class="admin-error" id="admin-error">Wrong password.</div>
+            <div class="form-row">
+              <button class="btn-confirm" style="padding:10px;" onclick="submitAdmin()">Login</button>
+              <button class="btn-cancel" style="padding:10px;" onclick="toggleAdminLogin()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="readonly-notice" id="readonly-notice">You are viewing as a guest. Only the admin can add or remove mods.</div>
+
+        <div class="add-form" id="add-form">
+          <input type="text" id="mod-name-input" placeholder="App name (e.g. Spotify)" />
+          <input type="text" id="mod-version-input" placeholder="Version (e.g. v8.9.12)" />
+          <input type="text" id="mod-desc-input" placeholder="What's modded (e.g. Premium unlocked)" />
+          <div class="form-row">
+            <button class="btn-confirm" onclick="addMod()">Add</button>
+            <button class="btn-cancel" onclick="toggleForm()">Cancel</button>
+          </div>
+        </div>
+
+        <div id="mod-list"></div>
+      </div>
+
+    </div>
+    <footer>uh.moddinghub &mdash; sky re's system</footer>
+  </div>
+
+  <script>
+    const VALID_KEY      = 'auth';
+    const ADMIN_PASSWORD = 'changeme123';
+    const CLIENT_ID      = '1493047001145671700';
+    const REDIRECT_URI   = 'https://skyre67.github.io/uh.moddinghub/';
+
+    let mods        = JSON.parse(localStorage.getItem('uh_mods') || '[]');
+    let isAdmin     = false;
+    let discordUser = null;
+
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    async function init() {
+      // Handle Discord OAuth callback
+      const hash   = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const token  = params.get('access_token');
+
+      if (token) {
+        localStorage.setItem('uh_discord_token', token);
+        localStorage.setItem('uh_key_ok', '1');
+        history.replaceState(null, '', window.location.pathname);
+        showScreen('dashboard-screen');
+        renderMods();
+        // Load Discord user quietly
+        document.getElementById('auth-overlay').classList.add('active');
+        try {
+          const user = await fetchDiscordUser(token);
+          discordUser = user;
+          localStorage.setItem('uh_discord_user', JSON.stringify(user));
+          applyDiscordUser(user);
+        } catch(e) {}
+        document.getElementById('auth-overlay').classList.remove('active');
+        return;
+      }
+
+      // Key check
+      if (!localStorage.getItem('uh_key_ok')) {
+        showScreen('key-screen');
+        return;
+      }
+
+      // Already past key — go to dashboard
+      showScreen('dashboard-screen');
+      renderMods();
+
+      // Restore Discord session silently
+      const savedToken = localStorage.getItem('uh_discord_token');
+      const savedUser  = localStorage.getItem('uh_discord_user');
+      if (savedToken && savedUser) {
+        try {
+          discordUser = JSON.parse(savedUser);
+          applyDiscordUser(discordUser);
+          fetchDiscordUser(savedToken).then(u => {
+            discordUser = u;
+            localStorage.setItem('uh_discord_user', JSON.stringify(u));
+            applyDiscordUser(u);
+          }).catch(() => {
+            localStorage.removeItem('uh_discord_token');
+            localStorage.removeItem('uh_discord_user');
+            resetDiscordUI();
+          });
+        } catch(e) {}
+      }
+    }
+
+    // ── KEY ───────────────────────────────────────────────────────────────────
+    function submitKey() {
+      const val = document.getElementById('key-input').value.trim();
+      const err = document.getElementById('key-error');
+      if (val !== VALID_KEY) { err.style.display = 'block'; return; }
+      err.style.display = 'none';
+      localStorage.setItem('uh_key_ok', '1');
+      showScreen('dashboard-screen');
+      renderMods();
+    }
+
+    document.getElementById('key-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitKey();
+    });
+
+    // ── DISCORD (OPTIONAL) ────────────────────────────────────────────────────
+    function loginWithDiscord() {
+      const p = new URLSearchParams({
+        client_id: CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        response_type: 'token',
+        scope: 'identify',
+      });
+      window.location.href = `https://discord.com/oauth2/authorize?${p}`;
+    }
+
+    async function fetchDiscordUser(token) {
+      const res = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('bad token');
+      return res.json();
+    }
+
+    function applyDiscordUser(user) {
+      const username = user.global_name || user.username;
+      document.getElementById('discord-login-btn').style.display = 'none';
+      document.getElementById('user-pill').classList.add('visible');
+      const wrap = document.getElementById('user-avatar-wrap');
+      if (user.avatar) {
+        wrap.innerHTML = `<img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64" class="user-avatar" alt="" />`;
+      } else {
+        wrap.textContent = username[0].toUpperCase();
+      }
+      document.getElementById('topbar-username').textContent = username;
+      document.getElementById('welcome-msg').textContent = `Welcome back, ${username}.`;
+      document.getElementById('discord-tag').textContent = `@${user.username}`;
+      document.getElementById('discord-stat').style.display = 'block';
+    }
+
+    function resetDiscordUI() {
+      document.getElementById('discord-login-btn').style.display = 'flex';
+      document.getElementById('user-pill').classList.remove('visible');
+      document.getElementById('welcome-msg').textContent = 'Welcome back.';
+      document.getElementById('discord-stat').style.display = 'none';
+    }
+
+    function discordLogout() {
+      localStorage.removeItem('uh_discord_token');
+      localStorage.removeItem('uh_discord_user');
+      discordUser = null;
+      resetDiscordUI();
+    }
+
+    // ── UI ────────────────────────────────────────────────────────────────────
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    // ── ADMIN ─────────────────────────────────────────────────────────────────
+    function toggleAdminLogin() {
+      if (isAdmin) { logoutAdmin(); return; }
+      const overlay = document.getElementById('admin-overlay');
+      overlay.classList.toggle('open');
+      if (overlay.classList.contains('open')) document.getElementById('admin-pass-input').focus();
+    }
+
+    function submitAdmin() {
+      const pass = document.getElementById('admin-pass-input').value;
+      const err  = document.getElementById('admin-error');
+      if (pass !== ADMIN_PASSWORD) { err.style.display = 'block'; return; }
+      err.style.display = 'none';
+      isAdmin = true;
+      document.getElementById('admin-overlay').classList.remove('open');
+      document.getElementById('admin-pass-input').value = '';
+      document.getElementById('admin-btn').textContent = 'Admin: on';
+      document.getElementById('add-mod-btn').style.display = 'inline-block';
+      document.getElementById('readonly-notice').style.display = 'none';
+      document.getElementById('access-level').textContent = 'Admin';
+      renderMods();
+    }
+
+    function logoutAdmin() {
+      isAdmin = false;
+      document.getElementById('admin-btn').textContent = 'Admin';
+      document.getElementById('add-mod-btn').style.display = 'none';
+      document.getElementById('add-form').classList.remove('open');
+      document.getElementById('readonly-notice').style.display = 'block';
+      document.getElementById('access-level').textContent = 'Viewer';
+      renderMods();
+    }
+
+    document.getElementById('admin-pass-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitAdmin();
+    });
+
+    // ── MODS ──────────────────────────────────────────────────────────────────
+    function toggleForm() {
+      const form = document.getElementById('add-form');
+      form.classList.toggle('open');
+      if (form.classList.contains('open')) document.getElementById('mod-name-input').focus();
+    }
+
+    function addMod() {
+      if (!isAdmin) return;
+      const name    = document.getElementById('mod-name-input').value.trim();
+      const version = document.getElementById('mod-version-input').value.trim();
+      const desc    = document.getElementById('mod-desc-input').value.trim();
+      if (!name) return;
+      mods.push({ name, version: version || 'v1.0', desc: desc || '', id: Date.now() });
+      saveMods(); renderMods();
+      document.getElementById('mod-name-input').value = '';
+      document.getElementById('mod-version-input').value = '';
+      document.getElementById('mod-desc-input').value = '';
+      document.getElementById('add-form').classList.remove('open');
+    }
+
+    function deleteMod(id) {
+      if (!isAdmin) return;
+      mods = mods.filter(m => m.id !== id);
+      saveMods(); renderMods();
+    }
+
+    function saveMods() {
+      localStorage.setItem('uh_mods', JSON.stringify(mods));
+      document.getElementById('mod-count').textContent = mods.length;
+    }
+
+    function renderMods() {
+      const list = document.getElementById('mod-list');
+      document.getElementById('mod-count').textContent = mods.length;
+      if (mods.length === 0) {
+        list.innerHTML = '<div class="empty-state">No mods yet.' + (isAdmin ? ' Click "+ Add mod" to add your first APK mod.' : '') + '</div>';
+        return;
+      }
+      list.innerHTML = mods.map(m => `
+        <div class="mod-card">
+          <div class="mod-info">
+            <span class="mod-name">${m.name}</span>
+            <span class="mod-meta">${m.version}${m.desc ? ' &mdash; ' + m.desc : ''}</span>
+          </div>
+          <div class="mod-right">
+            <span class="mod-tag">Active</span>
+            ${isAdmin ? `<button class="del-btn" onclick="deleteMod(${m.id})" title="Remove">&times;</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    init();
+  </script>
+</body>
+</html>
